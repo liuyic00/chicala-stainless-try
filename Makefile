@@ -5,4 +5,4 @@ compile:
 	sbt compile
 
 stainless:
-	./stainless-dotty-standalone-0.9.7-mac/stainless.sh $(SOURCES)
+	./stainless-scalac-standalone-0.9.7-mac/stainless.sh $(SOURCES)

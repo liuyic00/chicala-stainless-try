@@ -24,11 +24,13 @@ object ChicalaData {
 
     def apply(idx: BigInt): Bool = {
       require(0 <= idx && idx < width)
-      Bool((value / Pow2(idx)) % 2 == 1)
+      // TODO: Bool((value / Pow2(idx)) % 2 == 1)
+      Bool(true)
     }
     def apply(left: BigInt, right: BigInt): UInt = {
       require(left >= right)
-      UInt((value / Pow2(right)) % Pow2(left), left - right + 1)
+      // TODO: UInt((value / Pow2(right)) % Pow2(left), left - right + 1)
+      UInt(value, left - right + 1)
     }
 
     // Unary
@@ -103,12 +105,14 @@ object ChicalaData {
     }
   }
 
+  /*
   case class Vec[T <: Data](val array: Array[T], val length: Int) extends Data {
     // TODO: array need a Int index, this may couse problem using UInt to index
     def apply(idx: Int): T = {
       array(idx)
     }
   }
+   */
 
   case class Lit(value: BigInt, width: BigInt) {
     def U: UInt = UInt(value, width)

@@ -15,10 +15,10 @@ object Adder {
   )
 
   def adderTrans(width: Int, io: AdderIo): Unit = {
-    if (io.valid.value) {
+    if (when(io.valid)) {
       io.out := io.in1 + io.in2
     } else {
-      io.out := UInt(BigInt(0), 1) // 1.2.1
+      io.out := Lit(BigInt(0)).U
     }
-  } ensuring (if (io.valid.value) io.out.value == io.in1.value + io.in2.value else io.out.value == 0)
+  } ensuring (if (io.valid.value) io.out.value == io.in1.value + io.in2.value else io.out.value == BigInt(0))
 }
