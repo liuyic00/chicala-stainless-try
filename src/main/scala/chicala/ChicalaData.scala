@@ -3,41 +3,25 @@ package chicala
 object ChicalaData {
   import ChicalaUtil._
 
-  sealed abstract class Direction
-  case object Input  extends Direction
-  case object Output extends Direction
-
-  sealed abstract class PhysicalType
-  case class Io(direction: Direction) extends PhysicalType
-  case object Wire                    extends PhysicalType
-  case object Reg                     extends PhysicalType
-  case object Node                    extends PhysicalType
-
   sealed abstract class Data
 
-  case class UInt(var value: BigInt, val width: BigInt, val ptype: PhysicalType = Node, var next: BigInt = BigInt(0))
-      extends Data {
-
-    def clock(): Unit = {
-      value = next
-    }
+  case class UInt(val value: BigInt, val width: BigInt) extends Data {
+    require(0 <= width)
+    require(0 <= value && value < Pow2(width))
 
     def apply(idx: BigInt): Bool = {
       require(0 <= idx && idx < width)
-      // TODO: Bool((value / Pow2(idx)) % 2 == 1)
-      Bool(true)
+      Bool((value / Pow2(idx)) % 2 == 1)
     }
     def apply(left: BigInt, right: BigInt): UInt = {
       require(left >= right)
-      // TODO: UInt((value / Pow2(right)) % Pow2(left), left - right + 1)
-      UInt(value, left - right + 1)
+      UInt((value / Pow2(right)) % Pow2(left), left - right + 1)
     }
 
     // Unary
 
     def unary_- : UInt = {
-      // TODO
-      UInt(value, width)
+      UInt(Pow2(width) - value, width)
     }
 
     // Binary
@@ -69,31 +53,14 @@ object ChicalaData {
     def >=(that: UInt): Bool = {
       Bool(this.value >= that.value)
     }
-
-    def :=(that: UInt): Unit = {
-      ptype match {
-        case Reg => this.next = that.value
-        case Io(dir) =>
-          dir match {
-            case Input  => assert(false)
-            case Output => this.value = that.value
-          }
-        case Wire => this.value = that.value
-        case Node => assert(false)
-      }
-    }
   }
   object UInt {
-    def emptyReg(width: BigInt): UInt = {
-      UInt(BigInt(0), width, Reg, BigInt(0))
+    def empty(width: BigInt): UInt = {
+      UInt(BigInt(0), width)
     }
   }
 
-  case class Bool(var value: Boolean, val ptype: PhysicalType = Node, var next: Boolean = false) extends Data {
-    def clock(): Unit = {
-      value = next
-    }
-
+  case class Bool(val value: Boolean) extends Data {
     def unary_! : Bool = {
       Bool(!value)
     }
@@ -104,26 +71,12 @@ object ChicalaData {
     def &&(that: Bool): Bool = {
       Bool(this.value && that.value)
     }
-
-    def :=(that: Bool): Unit = {
-      this.value = that.value
-    }
   }
-
   object Bool {
-    def emptyReg(): Bool = {
-      Bool(false, Reg, false)
+    def empty(): Bool = {
+      Bool(false)
     }
   }
-
-  /*
-  case class Vec[T <: Data](val array: Array[T], val length: Int) extends Data {
-    // TODO: array need a Int index, this may couse problem using UInt to index
-    def apply(idx: Int): T = {
-      array(idx)
-    }
-  }
-   */
 
   case class Lit(value: BigInt, width: BigInt) {
     def U: UInt = UInt(value, width)

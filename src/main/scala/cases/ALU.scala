@@ -3,7 +3,6 @@ package cases
 import chicala._
 
 object Adder {
-  import ChicalaModule._
   import ChicalaData._
   import ChicalaUtil._
 
@@ -14,11 +13,13 @@ object Adder {
       val out: UInt
   )
 
-  def adderTrans(width: Int, io: AdderIo): Unit = {
-    if (when(io.valid)) {
-      io.out := io.in1 + io.in2
+  def adderTrans(width: BigInt)(io_valid: Bool, io_in1: UInt, io_in2: UInt) = {
+    var io_out = UInt.empty(width)
+    if (when(io_valid)) {
+      io_out = io_in1 + io_in2
     } else {
-      io.out := Lit(BigInt(0)).U
+      io_out = Lit(BigInt(0)).U
     }
-  } ensuring (if (io.valid.value) io.out.value == io.in1.value + io.in2.value else io.out.value == BigInt(0))
+    io_out
+  } ensuring (io_out => if (io_valid.value) io_out.value == io_in1.value + io_in2.value else io_out.value == BigInt(0))
 }

@@ -32,7 +32,10 @@ object ChicalaUtil {
   object Cat {
     def apply(left: UInt, right: UInt): UInt = {
       // `<<` need int param, use `Pow2` hear
-      UInt((left.value * Pow2(right.width)) + right.value, left.width + right.width)
+      UInt(
+        (left.value * Pow2(right.width)) + right.value,
+        left.width + right.width
+      )
     }
     def apply(left: UInt, right: Bool): UInt = {
       // `<<` need int param, use `Pow2` hear
@@ -67,10 +70,9 @@ object ChicalaUtil {
 
   object Log2 {
     def apply(x: UInt): UInt = {
-      // TODO
-      x
+      val log2 = bitLength(x.value) - 1
+      UInt(log2, bitLength(log2))
     }
-
   }
 
   def when(x: Bool): Boolean = {
