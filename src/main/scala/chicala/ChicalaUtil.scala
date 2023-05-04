@@ -23,7 +23,9 @@ object ChicalaUtil {
   }
 
   object Mux {
-    def apply[T <: Data](cond: Bool, con: T, alt: T): T = {
+    // Cannot instantiate a non-mutable function type parameter T <: Data
+    // so apply all the dataType
+    def apply(cond: Bool, con: UInt, alt: UInt): UInt = {
       if (cond.value) con else alt
     }
   }

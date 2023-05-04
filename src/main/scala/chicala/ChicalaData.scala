@@ -37,7 +37,7 @@ object ChicalaData {
 
     def unary_- : UInt = {
       // TODO
-      this
+      UInt(value, width)
     }
 
     // Binary
@@ -83,6 +83,11 @@ object ChicalaData {
       }
     }
   }
+  object UInt {
+    def emptyReg(width: BigInt): UInt = {
+      UInt(BigInt(0), width, Reg, BigInt(0))
+    }
+  }
 
   case class Bool(var value: Boolean, val ptype: PhysicalType = Node, var next: Boolean = false) extends Data {
     def clock(): Unit = {
@@ -102,6 +107,12 @@ object ChicalaData {
 
     def :=(that: Bool): Unit = {
       this.value = that.value
+    }
+  }
+
+  object Bool {
+    def emptyReg(): Bool = {
+      Bool(false, Reg, false)
     }
   }
 

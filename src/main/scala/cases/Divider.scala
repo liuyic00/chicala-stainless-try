@@ -10,7 +10,7 @@ object Divider {
   case class DividerIo_in(
       val ready: Bool,
       val valid: Bool,
-      val bits: Vec[UInt]
+      val bits: Array[UInt]
   ) {
     def isIos: Boolean = {
       (ready.ptype match {
@@ -21,13 +21,13 @@ object Divider {
         case Io(Input) => true
         case _         => false
       }) && ({
-        (bits.array(0) match {
+        (bits(0) match {
           case x: UInt =>
             x.ptype match {
               case Io(Input) => true
               case _         => false
             }
-        }) && (bits.array(1) match {
+        }) && (bits(1) match {
           case x: UInt =>
             x.ptype match {
               case Io(Input) => true
@@ -99,40 +99,53 @@ object Divider {
       aValx2Reg.ptype == Reg &&
       cnt.ptype == Reg
     }
+    def setNext(regs: DividerReg): Unit = {
+      state     := regs.state
+      shiftReg  := regs.shiftReg
+      aSignReg  := regs.aSignReg
+      qSignReg  := regs.qSignReg
+      bReg      := regs.bReg
+      aValx2Reg := regs.aValx2Reg
+      cnt       := regs.cnt
+    }
   }
 
-  def Divaider(len: BigInt = 64)(io: DividerIo, randomInitValue: DividerReg) = {
-    require(io.isIos && randomInitValue.isRegs)
-
-    val regInit = randomInitValue
-
-    // Enum(5)
-    val s_idle    = Lit(0, 3).U
-    val s_log2    = Lit(1, 3).U
-    val s_shift   = Lit(2, 3).U
-    val s_compute = Lit(3, 3).U
-    val s_finish  = Lit(4, 3).U
-
-    regInit.state := s_idle // val state = RegInit(s_idle)
-    regInit.cnt   := Lit(0).U
+  case class Divaider(len: BigInt = 64) {
 
     def abs(a: UInt, sign: Bool): (Bool, UInt) = {
       val s = a(len - 1) && sign
       (s, Mux(s, -a, a))
     }
+    def absSign(a: UInt, sign: Bool): Bool = {
+      a(len - 1) && sign
+    }
+    def absVal(a: UInt, sign: Bool): UInt = {
+      val s = a(len - 1) && sign
+      Mux(s, -a, a)
+    }
 
     def dividerTrans(io: DividerIo, regs: DividerReg): (DividerIo, DividerReg) = regs match {
       case DividerReg(state, shiftReg, aSignReg, qSignReg, bReg, aValx2Reg, cnt) =>
+        // Enum(5)
+        val s_idle    = Lit(0, 3).U
+        val s_log2    = Lit(1, 3).U
+        val s_shift   = Lit(2, 3).U
+        val s_compute = Lit(3, 3).U
+        val s_finish  = Lit(4, 3).U
+
         val newReq = (state === s_idle) && (io.in.ready && io.in.valid)
 
-        val (a, b) = (io.in.bits(0), io.in.bits(1))
+        val a      = io.in.bits(0)
+        val b      = io.in.bits(1)
         val divBy0 = b === Lit(0, len).U
 
         val hi = shiftReg(len * 2, len)
         val lo = shiftReg(len - 1, 0)
 
-        val (aSign, aVal) = abs(a, io.sign)
-        val (bSign, bVal) = abs(b, io.sign)
+        val aSign = absSign(a, io.sign)
+        val aVal  = absVal(a, io.sign)
+        val bSign = absSign(b, io.sign)
+        val bVal  = absVal(b, io.sign)
 
         if (when(newReq)) {
           aSignReg := aSign
@@ -189,17 +202,38 @@ object Divider {
 
         (io, DividerReg(state, shiftReg, aSignReg, qSignReg, bReg, aValx2Reg, cnt))
     }
+    def dividerRun(timeout: Int, io: DividerIo, regInit: DividerReg): (DividerIo, DividerReg) = {
+      require(timeout >= 0)
 
-    def dividerRun(timeout: Int)(io: DividerIo, regInit: DividerReg): (DividerIo, DividerReg) = {
       if (timeout > 0) {
-        val (newIo, newReg) = dividerTrans(io, regInit)
+        val newState = dividerTrans(io, regInit)
+        val newIo    = newState._1
+        val newReg   = newState._2
         newReg.clock()
-        dividerRun(timeout - 1)(newIo, newReg)
+        dividerRun(timeout - 1, newIo, regInit)
       } else {
         (io, regInit)
       }
     }
 
-    dividerRun(100)(io, regInit)
+    def run(io: DividerIo, randomInitValue: DividerReg) = {
+      require(io.isIos)
+
+      val regInit: DividerReg = DividerReg(
+        UInt.emptyReg(BigInt(3)),
+        UInt.emptyReg(1 + len * 2),
+        Bool.emptyReg(),
+        Bool.emptyReg(),
+        UInt.emptyReg(len),
+        UInt.emptyReg(len + 1),
+        UInt.emptyReg(bitLength(len))
+      )
+      regInit.setNext(randomInitValue)
+      regInit.state := Lit(0, 3).U      // RegInit
+      regInit.cnt   := Lit(BigInt(0)).U // RegInit
+      regInit.clock()
+
+      dividerRun(100, io, regInit)
+    }
   }
 }
