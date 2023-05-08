@@ -1,5 +1,8 @@
 ### Project Specific stuff
 test_run_dir/*
+src/main/scala/stainless
+.maketmp
+
 ### XilinxISE template
 # intermediate build files
 *.bgn
