@@ -3,8 +3,6 @@ package cases
 import chicala._
 
 object Divider {
-  import ChicalaData._
-  import ChicalaUtil._
 
   case class DividerInputs(
       io_in_ready: Bool,

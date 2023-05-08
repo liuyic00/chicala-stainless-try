@@ -3,9 +3,6 @@ package cases
 import chicala._
 
 object Adder {
-  import ChicalaData._
-  import ChicalaUtil._
-
   case class AdderIo(
       val valid: Bool,
       val in1: UInt,
