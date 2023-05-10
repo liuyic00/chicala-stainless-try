@@ -18,7 +18,7 @@ src/main/scala/stainless:
 	mv .maketmp/stainless/frontends/library/stainless src/main/scala/stainless
 	rm -rf .maketmp
 
-stainless:
+stainless: compile
 	./stainless-scalac-standalone/stainless-scalac-standalone-0.9.7-$(PLATFORM)/stainless.sh $(SOURCES)
 
 clean:
