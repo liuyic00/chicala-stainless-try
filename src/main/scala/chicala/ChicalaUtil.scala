@@ -36,8 +36,9 @@ object Cat {
     )
   }
   // `[T <: Bits]` then `List[T]` is not supported
-  def apply(ls: List[Bits]): UInt = {
-    ls.tail.foldLeft(ls.head.asUInt) { case (res, r) => Cat(res, r) }
+  // `List[T]` in stainless lib is not covariant
+  def apply(ls: List[UInt]): UInt = {
+    ls.tail.foldLeft(ls.head) { case (res, r) => Cat(res, r) }
   }
 }
 object Fill {
