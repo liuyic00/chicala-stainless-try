@@ -1,8 +1,10 @@
 package chicala
 
-sealed abstract class Data
+sealed abstract class Bits {
+  def asUInt: UInt
+}
 
-case class UInt(val value: BigInt, val width: BigInt) extends Data {
+case class UInt(val value: BigInt, val width: BigInt) extends Bits {
   require(0 <= width)
   require(0 <= value && value < Pow2(width))
 
@@ -15,10 +17,40 @@ case class UInt(val value: BigInt, val width: BigInt) extends Data {
     UInt((value / Pow2(right)) % Pow2(left), left - right + 1)
   }
 
+  def getWidth: BigInt = width
+  def asUInt: UInt     = this
+  def asBool: Bool = {
+    require(width == 1)
+    Bool(if (value == 1) true else false)
+  }
+
   // Unary
 
   def unary_- : UInt = {
     UInt(Pow2(width) - value, width)
+  }
+  def unary_~ : UInt = {
+    def reverseUInt(u: UInt): UInt = {
+      def f(result: BigInt, width: BigInt, bits: BigInt): BigInt = {
+        if (width > 0) {
+          f(result * 2 + bits % 2, width - 1, bits / 2)
+        } else {
+          result
+        }
+      }
+      UInt(f(0, u.value, u.width), u.width)
+    }
+    def reverseFlipUInt(u: UInt): UInt = {
+      def f(result: BigInt, width: BigInt, bits: BigInt): BigInt = {
+        if (width > 0) {
+          f(result * 2 + (bits + 1) % 2, width - 1, bits / 2)
+        } else {
+          result
+        }
+      }
+      UInt(f(0, u.value, u.width), u.width)
+    }
+    reverseUInt(reverseFlipUInt(this))
   }
 
   // Binary
@@ -42,6 +74,9 @@ case class UInt(val value: BigInt, val width: BigInt) extends Data {
   def <<(that: UInt): UInt = {
     UInt(this.value * Pow2(that.value), this.width + Pow2(that.width) - 1)
   }
+  def <<(that: BigInt): UInt = {
+    UInt(this.value * Pow2(that), this.width + that)
+  }
 
   // Binary compire
   def ===(that: UInt): Bool = {
@@ -57,11 +92,28 @@ object UInt {
   }
 }
 
-case class Bool(val value: Boolean) extends Data {
+case class Bool(val value: Boolean) extends Bits {
+  def asUInt: UInt = {
+    if (value) {
+      UInt(1, 1)
+    } else {
+      UInt(0, 1)
+    }
+  }
+
   def unary_! : Bool = {
     Bool(!value)
   }
+  def unary_~ : Bool = {
+    Bool(!value)
+  }
 
+  def &(that: Bool): Bool = {
+    Bool(this.value & that.value)
+  }
+  def |(that: Bool): Bool = {
+    Bool(this.value | that.value)
+  }
   def ^(that: Bool): Bool = {
     Bool(this.value ^ that.value)
   }

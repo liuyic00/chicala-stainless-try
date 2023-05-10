@@ -1,10 +1,6 @@
 package chicala
 
-object max {
-  def apply(a: BigInt, b: BigInt): BigInt = {
-    if (a > b) a else b
-  }
-}
+import stainless.collection._
 
 object bitLength {
   def apply(x: BigInt): BigInt = {
@@ -26,23 +22,40 @@ object log2Ceil {
 }
 
 object Mux {
-  // Cannot instantiate a non-mutable function type parameter T <: Data
-  // so apply all the dataType
-  def apply(cond: Bool, con: UInt, alt: UInt): UInt = {
+  def apply[T <: Bits](cond: Bool, con: T, alt: T): T = {
     if (cond.value) con else alt
   }
 }
 object Cat {
-  def apply(left: UInt, right: UInt): UInt = {
-    // `<<` need int param, use `Pow2` hear
+  def apply(left: Bits, right: Bits): UInt = {
+    val l = left.asUInt
+    val r = right.asUInt
     UInt(
-      (left.value * Pow2(right.width)) + right.value,
-      left.width + right.width
+      (l.value * Pow2(r.width)) + r.value,
+      l.width + r.width
     )
   }
-  def apply(left: UInt, right: Bool): UInt = {
-    // `<<` need int param, use `Pow2` hear
-    UInt((left.value * 2) + (if (right.value) 1 else 0), left.width + 1)
+  // `[T <: Bits]` then `List[T]` is not supported
+  def apply(ls: List[Bits]): UInt = {
+    ls.tail.foldLeft(ls.head.asUInt) { case (res, r) => Cat(res, r) }
+  }
+}
+object Fill {
+  def apply(times: BigInt, bool: Bool): UInt = {
+    require(times > 0)
+    def f(result: UInt, times: BigInt): UInt = {
+      if (times > 0)
+        f(Cat(result, bool), times - 1)
+      else
+        result
+    }
+    f(bool.asUInt, times - 1)
+  }
+}
+
+object MuxLookup {
+  def apply[T <: Bits](key: UInt, default: T, mapping: List[(UInt, T)]): T = {
+    mapping.foldLeft(default) { case (res, (k, v)) => Mux(k === key, v, res) }
   }
 }
 

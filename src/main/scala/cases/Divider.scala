@@ -53,7 +53,7 @@ case class Divider(len: BigInt = 64) {
     (s, Mux(s, -a, a))
   }
 
-  def trans(inputs: DividerInputs, regs: DividerRegs) = {
+  def trans(inputs: DividerInputs, regs: DividerRegs): (DividerOutputs, DividerRegs) = {
     require(inputsRequire(inputs) && regsRequire(regs))
 
     (inputs, regs) match {
