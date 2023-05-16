@@ -5,7 +5,7 @@ sealed abstract class Bits {
 }
 
 case class UInt(val value: BigInt, val width: BigInt) extends Bits {
-  require(0 <= width)
+  require(0 < width)
   require(0 <= value && value < Pow2(width))
 
   def apply(idx: BigInt): Bool = {
@@ -14,7 +14,7 @@ case class UInt(val value: BigInt, val width: BigInt) extends Bits {
   }
   def apply(left: BigInt, right: BigInt): UInt = {
     require(left >= right)
-    UInt((value / Pow2(right)) % Pow2(left), left - right + 1)
+    UInt((value / Pow2(right)) % Pow2(left - right), left - right + 1)
   }
 
   def getWidth: BigInt = width
@@ -27,10 +27,15 @@ case class UInt(val value: BigInt, val width: BigInt) extends Bits {
   // Unary
 
   def unary_- : UInt = {
-    UInt(Pow2(width) - value, width)
+    if (value == 0) {
+      this
+    } else {
+      UInt(Pow2(width) - value, width)
+    }
   }
   def unary_~ : UInt = {
     def reverseUInt(u: UInt): UInt = {
+      require(u.isInstanceOf[UInt])
       def f(result: BigInt, width: BigInt, bits: BigInt): BigInt = {
         if (width > 0) {
           f(result * 2 + bits % 2, width - 1, bits / 2)
@@ -41,6 +46,7 @@ case class UInt(val value: BigInt, val width: BigInt) extends Bits {
       UInt(f(0, u.value, u.width), u.width)
     }
     def reverseFlipUInt(u: UInt): UInt = {
+      require(u.isInstanceOf[UInt])
       def f(result: BigInt, width: BigInt, bits: BigInt): BigInt = {
         if (width > 0) {
           f(result * 2 + (bits + 1) % 2, width - 1, bits / 2)
@@ -61,20 +67,23 @@ case class UInt(val value: BigInt, val width: BigInt) extends Bits {
     val limt     = Pow2(newWidth)
 
     UInt(
-      if (carryed > limt) carryed - limt else carryed,
+      if (carryed >= limt) carryed - limt else carryed,
       newWidth
     )
   }
   def -(that: UInt): UInt = {
+    val newWidth = if (this.width > that.width) this.width else that.width
+    val limt     = Pow2(newWidth)
     UInt(
-      this.value - that.value,
-      (if (this.width > that.width) this.width else that.width) + 1
+      if (this.value >= that.value) this.value - that.value else this.value + limt - that.value,
+      if (this.width > that.width) this.width else that.width
     )
   }
   def <<(that: UInt): UInt = {
     UInt(this.value * Pow2(that.value), this.width + Pow2(that.width) - 1)
   }
   def <<(that: BigInt): UInt = {
+    require(0 <= that)
     UInt(this.value * Pow2(that), this.width + that)
   }
 
@@ -88,6 +97,7 @@ case class UInt(val value: BigInt, val width: BigInt) extends Bits {
 }
 object UInt {
   def empty(width: BigInt): UInt = {
+    require(0 < width)
     UInt(BigInt(0), width)
   }
 }
@@ -128,10 +138,17 @@ object Bool {
 }
 
 case class Lit(value: BigInt, width: BigInt) {
+  require(0 < width)
+  require(0 <= value && value < Pow2(width))
   def U: UInt = UInt(value, width)
 }
 object Lit {
   def apply(value: BigInt): Lit = {
-    Lit(value, log2Ceil(value + 1))
+    require(0 <= value)
+    if (value == 0) {
+      Lit(0, 1)
+    } else {
+      Lit(value, log2Ceil(value + 1))
+    }
   }
 }

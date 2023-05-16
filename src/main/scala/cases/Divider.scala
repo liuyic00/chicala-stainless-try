@@ -178,7 +178,7 @@ case class Divider(len: BigInt = 64) {
       randomInitValue.qSignReg,
       randomInitValue.bReg,
       randomInitValue.aValx2Reg,
-      Lit(0).U
+      Lit(0, bitLength(len)).U
     )
     dividerRun(100, inputs, regInit)
   } ensuring { case (outputs, regNexts) =>

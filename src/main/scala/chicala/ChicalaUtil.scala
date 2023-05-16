@@ -87,8 +87,12 @@ object Pow2 {
 
 object Log2 {
   def apply(x: UInt): UInt = {
-    val log2 = bitLength(x.value) - 1
-    UInt(log2, bitLength(log2))
+    if (x.value < 2) {
+      UInt(0, 1)
+    } else {
+      val log2 = bitLength(x.value) - 1
+      UInt(log2, bitLength(log2))
+    }
   }
 }
 
